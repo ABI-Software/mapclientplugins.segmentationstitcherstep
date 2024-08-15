@@ -1,0 +1,6 @@
+
+<RCC>
+  <qresource prefix="segmentationstitcherstep">
+    <file>images/segmentation.png</file>
+  </qresource>
+</RCC>
