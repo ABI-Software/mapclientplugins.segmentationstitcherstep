@@ -42,17 +42,16 @@ class SegmentationStitcherModel(object):
             "display_marker_names": False,
             "display_line_general": True,
             "display_line_general_radius": False,
-            "display_line_general_scale": 1.0,
             "display_network_group_1": True,
             "display_network_group_1_radius": False,
-            "display_network_group_1_scale": 1.0,
             "display_network_group_2": True,
             "display_network_group_2_radius": False,
-            "display_network_group_2_scale": 1.0,
             "display_independent_networks": True,
             "display_independent_networks_radius": False,
-            "display_independent_networks_scale": 1.0,
-            "display_connection_lines": True
+            "display_end_point_directions": True,
+            "display_end_point_best_fit_lines": True,
+            "display_end_point_radius": False,
+            "display_radius_scale": 1.0
         }
         self._load_settings()
         self.create_graphics()
@@ -186,11 +185,21 @@ class SegmentationStitcherModel(object):
     def _get_visibility(self, graphics_name):
         return self._display_settings[graphics_name]
 
-    def _set_visibility(self, graphics_name, show):
+    def _set_raw_visibility(self, graphics_name, show):
         self._display_settings[graphics_name] = show
         segments = self._stitcher.get_segments()
         for segment in segments:
             region = segment.get_raw_region()
+            scene = region.getScene()
+            graphics = scene.findGraphicsByName(graphics_name)
+            if graphics.isValid():
+                graphics.setVisibilityFlag(show)
+
+    def _set_working_visibility(self, graphics_name, show):
+        self._display_settings[graphics_name] = show
+        segments = self._stitcher.get_segments()
+        for segment in segments:
+            region = segment.get_working_region()
             scene = region.getScene()
             graphics = scene.findGraphicsByName(graphics_name)
             if graphics.isValid():
@@ -216,25 +225,25 @@ class SegmentationStitcherModel(object):
         return self._get_visibility("display_axes")
 
     def set_display_axes(self, show):
-        self._set_visibility("display_axes", show)
+        self._set_raw_visibility("display_axes", show)
 
     def is_display_marker_points(self):
         return self._get_visibility("display_marker_points")
 
     def set_display_marker_points(self, show):
-        self._set_visibility("display_marker_points", show)
+        self._set_raw_visibility("display_marker_points", show)
 
     def is_display_marker_names(self):
         return self._get_visibility("display_marker_names")
 
     def set_display_marker_names(self, show):
-        self._set_visibility("display_marker_names", show)
+        self._set_raw_visibility("display_marker_names", show)
 
     def is_display_line_general(self):
         return self._get_visibility("display_line_general")
 
     def set_display_line_general(self, show):
-        self._set_visibility("display_line_general", show)
+        self._set_raw_visibility("display_line_general", show)
 
     def is_display_line_general_radius(self):
         return self._get_line_radius("display_line_general")
@@ -246,7 +255,7 @@ class SegmentationStitcherModel(object):
         return self._get_visibility("display_independent_networks")
 
     def set_display_independent_networks(self, show):
-        self._set_visibility("display_independent_networks", show)
+        self._set_raw_visibility("display_independent_networks", show)
 
     def is_display_independent_networks_radius(self):
         return self._get_line_radius("display_independent_networks")
@@ -258,7 +267,7 @@ class SegmentationStitcherModel(object):
         return self._get_visibility("display_network_group_1")
 
     def set_display_network_group_1(self, show):
-        self._set_visibility("display_network_group_1", show)
+        self._set_raw_visibility("display_network_group_1", show)
 
     def is_display_network_group_1_radius(self):
         return self._get_line_radius("display_network_group_1")
@@ -270,13 +279,74 @@ class SegmentationStitcherModel(object):
         return self._get_visibility("display_network_group_2")
 
     def set_display_network_group_2(self, show):
-        self._set_visibility("display_network_group_2", show)
+        self._set_raw_visibility("display_network_group_2", show)
 
     def is_display_network_group_2_radius(self):
         return self._get_line_radius("display_network_group_2")
 
     def set_display_network_group_2_radius(self, show_radius):
         self._set_line_radius("display_network_group_2", show_radius)
+
+    def is_display_end_point_directions(self):
+        return self._get_visibility("display_end_point_directions")
+
+    def set_display_end_point_directions(self, show):
+        self._set_working_visibility("display_end_point_directions", show)
+
+    def is_display_end_point_best_fit_lines(self):
+        return self._get_visibility("display_end_point_best_fit_lines")
+
+    def set_display_end_point_best_fit_lines(self, show):
+        self._set_working_visibility("display_end_point_best_fit_lines", show)
+
+    def is_display_end_point_radius(self):
+        return self._display_settings["display_end_point_radius"]
+
+    def set_display_end_point_radius(self, show_radius):
+        self._display_settings["display_end_point_radius"] = show_radius
+        graphics_name = "display_end_point_best_fit_lines"
+        segments = self._stitcher.get_segments()
+        for segment in segments:
+            working_region = segment.get_working_region()
+            working_scene = working_region.getScene()
+            graphics = working_scene.findGraphicsByName(graphics_name)
+            if graphics.isValid():
+                point_attr = graphics.getGraphicspointattributes()
+                point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CYLINDER if show_radius else Glyph.SHAPE_TYPE_LINE)
+
+    def get_radius_scale(self):
+        return self._display_settings["display_radius_scale"]
+
+    def set_radius_scale(self, radius_scale):
+        self._display_settings["display_radius_scale"] = radius_scale
+        raw_line_graphics_names = [
+            "display_line_general",
+            "display_independent_networks",
+            "display_network_group_1",
+            "display_network_group_2"
+        ]
+        working_point_graphics_names = [
+            "display_end_point_directions"
+        ]
+        segments = self._stitcher.get_segments()
+        for segment in segments:
+            raw_region = segment.get_raw_region()
+            raw_scene = raw_region.getScene()
+            with ChangeManager(raw_scene):
+                for graphics_name in raw_line_graphics_names:
+                    graphics = raw_scene.findGraphicsByName(graphics_name)
+                    if graphics.isValid():
+                        line_attr = graphics.getGraphicslineattributes()
+                        line_attr.setScaleFactors([2.0 * radius_scale])
+            working_region = segment.get_working_region()
+            working_scene = working_region.getScene()
+            with ChangeManager(working_scene):
+                end_point_directions = working_scene.findGraphicsByName("display_end_point_directions")
+                point_attr = end_point_directions.getGraphicspointattributes()
+                point_attr.setScaleFactors([2.0 * radius_scale, 2.0 * radius_scale, 2.0 * radius_scale])
+                end_point_best_fit_lines = working_scene.findGraphicsByName("display_end_point_best_fit_lines")
+                point_attr = end_point_best_fit_lines.getGraphicspointattributes()
+                point_attr.setScaleFactors([1.0, 2.0 * radius_scale, 2.0 * radius_scale])
 
     def create_graphics(self):
         root_region = self.get_root_region()
@@ -325,6 +395,7 @@ class SegmentationStitcherModel(object):
             axes.setName("display_axes")
             axes.setVisibilityFlag(self._display_settings["display_axes"])
 
+        radius_scale = self.get_radius_scale()
         for segment in segments:
             region = segment.get_raw_region()
             fieldmodule = region.getFieldmodule()
@@ -333,7 +404,7 @@ class SegmentationStitcherModel(object):
             if marker_group.isValid():
                 marker_coordinates = fieldmodule.findFieldByName("marker coordinates")
                 if not marker_coordinates.isValid():
-                    marker_coordinates = None
+                    marker_coordinates = coordinates
                 marker_name = fieldmodule.findFieldByName("marker_name")
                 if not marker_name.isValid():
                     marker_name = None
@@ -349,29 +420,29 @@ class SegmentationStitcherModel(object):
                 scene.removeAllGraphics()
 
                 markerPoints = scene.createGraphicsPoints()
-                markerPoints.setFieldDomainType(Field.DOMAIN_TYPE_NODES)
+                markerPoints.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
                 if marker_group:
                     markerPoints.setSubgroupField(marker_group)
                 if marker_coordinates:
                     markerPoints.setCoordinateField(marker_coordinates)
-                pointattr = markerPoints.getGraphicspointattributes()
-                pointattr.setBaseSize([glyph_width_small, glyph_width_small, glyph_width_small])
-                pointattr.setGlyphShapeType(Glyph.SHAPE_TYPE_CROSS)
+                point_attr = markerPoints.getGraphicspointattributes()
+                point_attr.setBaseSize([glyph_width_small, glyph_width_small, glyph_width_small])
+                point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CROSS)
                 markerPoints.setMaterial(self._materialmodule.findMaterialByName("white"))
                 markerPoints.setName("display_marker_points")
                 markerPoints.setVisibilityFlag(self.is_display_marker_points())
 
                 markerNames = scene.createGraphicsPoints()
-                markerNames.setFieldDomainType(Field.DOMAIN_TYPE_NODES)
+                markerNames.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
                 if marker_group:
                     markerNames.setSubgroupField(marker_group)
                 if marker_coordinates:
                     markerNames.setCoordinateField(marker_coordinates)
-                pointattr = markerNames.getGraphicspointattributes()
-                pointattr.setBaseSize([glyph_width_small, glyph_width_small, glyph_width_small])
-                pointattr.setGlyphShapeType(Glyph.SHAPE_TYPE_NONE)
+                point_attr = markerNames.getGraphicspointattributes()
+                point_attr.setBaseSize([glyph_width_small, glyph_width_small, glyph_width_small])
+                point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_NONE)
                 if marker_name:
-                    pointattr.setLabelField(marker_name)
+                    point_attr.setLabelField(marker_name)
                 markerNames.setMaterial(self._materialmodule.findMaterialByName("white"))
                 markerNames.setName("display_marker_names")
                 markerNames.setVisibilityFlag(self.is_display_marker_names())
@@ -388,13 +459,46 @@ class SegmentationStitcherModel(object):
                     line_attr = lines.getGraphicslineattributes()
                     if radius:
                         line_attr.setOrientationScaleField(radius)
-                        line_attr.setScaleFactors([2.0 * self._display_settings[settings_name + "_scale"]])
+                        line_attr.setScaleFactors([2.0 * radius_scale])
                     line_attr.setShapeType(Graphicslineattributes.SHAPE_TYPE_CIRCLE_EXTRUSION
                                            if self._display_settings[settings_name + "_radius"] else
                                            Graphicslineattributes.SHAPE_TYPE_LINE)
                     lines.setMaterial(self._materialmodule.findMaterialByName(material_name))
                     lines.setName(settings_name)
                     lines.setVisibilityFlag(self._display_settings[settings_name])
+
+            working_region = segment.get_working_region()
+            working_scene = working_region.getScene()
+            end_point_coordinates, end_point_radius_direction, end_point_best_fit_line_orientation =(
+                segment.get_end_point_fields())
+            show_radius = self.is_display_end_point_radius()
+            with ChangeManager(working_scene):
+                working_scene.removeAllGraphics()
+
+                end_point_directions = working_scene.createGraphicsPoints()
+                end_point_directions.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+                end_point_directions.setCoordinateField(end_point_coordinates)
+                point_attr = end_point_directions.getGraphicspointattributes()
+                point_attr.setBaseSize([0.0, 0.0, 0.0])
+                point_attr.setOrientationScaleField(end_point_radius_direction)
+                point_attr.setScaleFactors([2.0 * radius_scale, 2.0 * radius_scale, 2.0 * radius_scale])
+                point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CONE)
+                end_point_directions.setMaterial(self._materialmodule.findMaterialByName("silver"))
+                end_point_directions.setName("display_end_point_directions")
+                end_point_directions.setVisibilityFlag(self.is_display_end_point_directions())
+
+                end_point_best_fit_lines = working_scene.createGraphicsPoints()
+                end_point_best_fit_lines.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+                end_point_best_fit_lines.setCoordinateField(end_point_coordinates)
+                point_attr = end_point_best_fit_lines.getGraphicspointattributes()
+                point_attr.setBaseSize([0.0, 0.0, 0.0])
+                point_attr.setOrientationScaleField(end_point_best_fit_line_orientation)
+                point_attr.setScaleFactors([1.0, 2.0 * radius_scale, 2.0 * radius_scale])
+                point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CYLINDER if show_radius else Glyph.SHAPE_TYPE_LINE)
+                # end_point_best_fit_lines.setRenderPolygonMode(Graphics.RENDER_POLYGON_MODE_WIREFRAME)
+                end_point_best_fit_lines.setMaterial(self._materialmodule.findMaterialByName("grey50"))
+                end_point_best_fit_lines.setName("display_end_point_best_fit_lines")
+                end_point_best_fit_lines.setVisibilityFlag(self.is_display_end_point_best_fit_lines())
 
     def autorange_spectrum(self):
         scene = self.get_root_region().getScene()

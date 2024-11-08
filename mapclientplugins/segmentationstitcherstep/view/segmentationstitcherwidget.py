@@ -25,6 +25,19 @@ def QLineEdit_parseInt(lineedit):
     return None
 
 
+def QLineEdit_parseRealNonNegative(lineedit):
+    """
+    Return non-negative real value from line edit text, or negative if failed.
+    """
+    try:
+        value = float(lineedit.text())
+        if value >= 0.0:
+            return value
+    except:
+        pass
+    return -1.0
+
+
 def QLineEdit_parseVector(lineedit):
     """
     Return one or more component real vector as list from comma separated text in QLineEdit widget
@@ -98,6 +111,11 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         self._ui.displayNetworkGroup2_checkBox.clicked.connect(self._displayNetworkGroup2_clicked)
         self._ui.displayNetworkGroup2Radius_checkBox.clicked.connect(self._displayNetworkGroup2Radius_clicked)
 
+        self._ui.displayRadiusScale_lineEdit.editingFinished.connect(self._displayRadiusScale_entered)
+        self._ui.displayEndPointDirections_checkBox.clicked.connect(self._displayEndPointDirections_clicked)
+        self._ui.displayEndPointBestFitLines_checkBox.clicked.connect(self._displayEndPointBestFitLines_clicked)
+        self._ui.displayEndPointRadius_checkBox.clicked.connect(self._displayEndPointRadius_clicked)
+
         self._ui.annotationName_comboBox.currentIndexChanged.connect(self._annotationName_changed)
         self._ui.annotationCategory_comboBox.currentIndexChanged.connect(self._annotationCategory_changed)
 
@@ -115,6 +133,11 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         self._ui.displayNetworkGroup1Radius_checkBox.setChecked(self._model.is_display_network_group_1_radius())
         self._ui.displayNetworkGroup2_checkBox.setChecked(self._model.is_display_network_group_2())
         self._ui.displayNetworkGroup2Radius_checkBox.setChecked(self._model.is_display_network_group_2_radius())
+
+        self._refresh_radius_scale()
+        self._ui.displayEndPointDirections_checkBox.setChecked(self._model.is_display_end_point_directions())
+        self._ui.displayEndPointBestFitLines_checkBox.setChecked(self._model.is_display_end_point_best_fit_lines())
+        self._ui.displayEndPointRadius_checkBox.setChecked(self._model.is_display_end_point_radius())
 
         self._refresh_segment_data()
         self._refresh_current_annotation_settings()
@@ -352,3 +375,24 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
 
     def _displayNetworkGroup2Radius_clicked(self):
         self._model.set_display_network_group_2_radius(self._ui.displayNetworkGroup2Radius_checkBox.isChecked())
+
+    def _displayEndPointDirections_clicked(self):
+        self._model.set_display_end_point_directions(self._ui.displayEndPointDirections_checkBox.isChecked())
+
+    def _displayEndPointBestFitLines_clicked(self):
+        self._model.set_display_end_point_best_fit_lines(self._ui.displayEndPointBestFitLines_checkBox.isChecked())
+
+    def _displayEndPointRadius_clicked(self):
+        self._model.set_display_end_point_radius(self._ui.displayEndPointRadius_checkBox.isChecked())
+
+    def _refresh_radius_scale(self):
+        realFormat = "{:.4g}"
+        radius_scale = self._model.get_radius_scale()
+        radius_scale_str = realFormat.format(radius_scale)
+        self._ui.displayRadiusScale_lineEdit.setText(radius_scale_str)
+
+    def _displayRadiusScale_entered(self):
+        radius_scale = QLineEdit_parseRealNonNegative(self._ui.displayRadiusScale_lineEdit)
+        if radius_scale >= 0.0:
+            self._model.set_radius_scale(radius_scale)
+        self._refresh_radius_scale()
