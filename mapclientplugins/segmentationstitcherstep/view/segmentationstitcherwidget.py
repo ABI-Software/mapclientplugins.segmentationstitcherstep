@@ -9,6 +9,7 @@ import webbrowser
 from PySide6 import QtCore, QtWidgets
 
 from cmlibs.maths.vectorops import dot, magnitude, mult, normalize, sub
+from mapclientplugins.segmentationstitcherstep.view.newconnectiondialog import NewConnectionDialog
 from mapclientplugins.segmentationstitcherstep.view.ui_segmentationstitcherwidget import Ui_SegmentationStitcherWidget
 from segmentationstitcher.annotation import AnnotationCategory
 
@@ -65,6 +66,7 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         self._build_segments_list()
         self._build_annotationName_comboBox()
         self._build_annotationCategory_comboBox()
+        self._build_connections_list()
         self._make_connections()
         self._refresh_options()
 
@@ -97,6 +99,9 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         self._ui.segmentTranslation_lineEdit.editingFinished.connect(self._segmentTranslation_lineEditChanged)
         self._ui.segmentTransformationCalculate_pushButton.clicked.connect(
             self._segmentTransformationCalculate_buttonPressed)
+
+        self._ui.conntectionsNew_pushButton.clicked.connect(self._connectionNew_buttonClicked)
+        self._ui.connectionsDelete_pushButton.clicked.connect(self._connectionDelete_buttonClicked)
 
         self._ui.displayAxes_checkBox.clicked.connect(self._displayAxes_clicked)
         self._ui.displayMarkerPoints_checkBox.clicked.connect(self._displayMarkerPoints_clicked)
@@ -281,7 +286,7 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         Fill the segments list including visibility check boxes.
         """
         if self._ui.segments_listWidget is not None:
-            self._ui.segments_listWidget.clear()  # Must clear or holds on to graphics references
+            self._ui.segments_listWidget.clear()
         stitcher = self._model.get_stitcher()
         segments = stitcher.get_segments()
         for segment in segments:
@@ -342,6 +347,67 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
             segment.set_translation(translation)
             self._model.set_segment_scene_transformation(segment)
         self._refresh_segment_data()
+
+    def _build_connections_list(self):
+        """
+        Fill the connections list including visibility check boxes.
+        """
+        if self._ui.connections_listWidget is not None:
+            self._ui.connections_listWidget.clear()
+        stitcher = self._model.get_stitcher()
+        connections = stitcher.get_connections()
+        for connection in connections:
+            name = connection.get_name()
+            item = QtWidgets.QListWidgetItem(name)
+            item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
+            visible = connection.get_region().getScene().getVisibilityFlag()
+            item.setCheckState(QtCore.Qt.CheckState.Checked if visible else QtCore.Qt.CheckState.Unchecked)
+            self._ui.connections_listWidget.addItem(item)
+            if connection == self._model.get_current_connection():
+                self._ui.connections_listWidget.setCurrentItem(item)
+        self._ui.connections_listWidget.itemClicked.connect(self._connections_list_itemClicked)
+        self._ui.connections_listWidget.show()
+
+    def _connections_list_itemClicked(self, item):
+        """
+        Either changes visibility flag or selects current connection.
+        """
+        clicked_index = self._ui.connections_listWidget.row(item)
+        stitcher = self._model.get_stitcher()
+        connections = stitcher.get_connections()
+        connection = connections[clicked_index]
+        visibility_flag = item.checkState() == QtCore.Qt.CheckState.Checked
+        connection.get_region().getScene().setVisibilityFlag(visibility_flag)
+        selected_modelIndex = self._ui.connections_listWidget.currentIndex()
+        if clicked_index == selected_modelIndex.row():
+            self._model.set_current_connection(connection)
+
+    def _connectionNew_buttonClicked(self):
+        stitcher = self._model.get_stitcher()
+        new_connection_dialog = NewConnectionDialog(self, stitcher)
+        if new_connection_dialog.exec():
+            segments = new_connection_dialog.get_segments()
+            connection = stitcher.create_connection(segments)
+            if connection:
+                self._model.set_current_connection(connection)
+                self._build_connections_list()
+
+    def _connectionDelete_buttonClicked(self):
+        connection = self._model.get_current_connection()
+        if not connection:
+            return
+        reply = QtWidgets.QMessageBox.question(
+            self, 'Confirm action',
+            'Delete connection \'' + connection.get_name() + '\'?',
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No)
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            stitcher = self._model.get_stitcher()
+            stitcher.delete_connection(connection)
+            connections = stitcher.get_connections()
+            connection = connections[0] if connections else None
+            self._model.set_current_connection(connection)
+            self._build_connections_list()
 
     def _displayAxes_clicked(self):
         self._model.set_display_axes(self._ui.displayAxes_checkBox.isChecked())

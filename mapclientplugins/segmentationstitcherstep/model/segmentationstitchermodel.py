@@ -59,6 +59,8 @@ class SegmentationStitcherModel(object):
         for segment in segments:
             self.set_segment_scene_transformation(segment)
         self._current_segment = segments[0] if segments else None
+        connections = self._stitcher.get_connections()
+        self._current_connection = connections[0] if connections else None
         self._current_annotation = None
 
     def _init_graphics_modules(self):
@@ -181,6 +183,15 @@ class SegmentationStitcherModel(object):
             [0.0, 0.0, 0.0, 1.0])
         base_scene = segment.get_base_region().getScene()
         base_scene.setTransformationMatrix(transformation_matrix_4x4)
+
+    def get_current_connection(self):
+        """
+        :return: Current connection or None if none.
+        """
+        return self._current_connection
+
+    def set_current_connection(self, connection):
+        self._current_connection = connection
 
     def _get_visibility(self, graphics_name):
         return self._display_settings[graphics_name]

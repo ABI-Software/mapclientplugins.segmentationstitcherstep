@@ -33,7 +33,7 @@ readme = readfile("README.rst", split=True)[3:]  # Skip title
 source_license = readfile("LICENSE")
 requires = [
     # minimal requirements listing
-    "segmentationstitcher >= 0.1",
+    "segmentationstitcher",
     "cmlibs.maths >= 0.6.2",
     "cmlibs.utils >= 0.9.0",
     "cmlibs.zinc >= 4.1",
