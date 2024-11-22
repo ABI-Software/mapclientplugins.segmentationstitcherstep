@@ -69,6 +69,11 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         self._build_connections_list()
         self._make_connections()
         self._refresh_options()
+        self._model.setSegmentDataChangeCallback(self._segmentDataChanged)
+
+    def _segmentDataChanged(self, segment):
+        if segment == self._model.get_current_segment():
+            self._refresh_segment_data()
 
     def _graphics_initialized(self):
         """
@@ -97,11 +102,11 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         self._ui.viewAll_pushButton.clicked.connect(self._viewAll_buttonClicked)
         self._ui.segmentRotation_lineEdit.editingFinished.connect(self._segmentRotation_lineEditChanged)
         self._ui.segmentTranslation_lineEdit.editingFinished.connect(self._segmentTranslation_lineEditChanged)
-        self._ui.segmentTransformationCalculate_pushButton.clicked.connect(
-            self._segmentTransformationCalculate_buttonPressed)
 
         self._ui.conntectionsNew_pushButton.clicked.connect(self._connectionNew_buttonClicked)
         self._ui.connectionsDelete_pushButton.clicked.connect(self._connectionDelete_buttonClicked)
+        self._ui.connectionsOptimiseTransformation_pushButton.clicked.connect(
+            self._connectionsOptimiseTransformation_buttonPressed)
 
         self._ui.displayAxes_checkBox.clicked.connect(self._displayAxes_clicked)
         self._ui.displayMarkerPoints_checkBox.clicked.connect(self._displayMarkerPoints_clicked)
@@ -278,9 +283,6 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         if self._ui.alignmentsceneviewerwidget.getSceneviewer() is not None:
             self._ui.alignmentsceneviewerwidget.viewAll()
 
-    def _segmentTransformationCalculate_buttonPressed(self):
-        pass
-
     def _build_segments_list(self):
         """
         Fill the segments list including visibility check boxes.
@@ -332,9 +334,9 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
                 rotation.append(0.0)
             if len(rotation) > 3:
                 rotation = rotation[:3]
-            segment.set_rotation(rotation)
-            self._model.set_segment_scene_transformation(segment)
-        self._refresh_segment_data()
+            self._model.set_segment_rotation(segment, rotation)
+        else:
+            self._refresh_segment_data()
 
     def _segmentTranslation_lineEditChanged(self):
         segment = self._model.get_current_segment()
@@ -344,9 +346,9 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
                 translation.append(0.0)
             if len(translation) > 3:
                 translation = translation[:3]
-            segment.set_translation(translation)
-            self._model.set_segment_scene_transformation(segment)
-        self._refresh_segment_data()
+            self._model.set_segment_translation(segment, translation)
+        else:
+            self._refresh_segment_data()
 
     def _build_connections_list(self):
         """
@@ -387,9 +389,8 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         new_connection_dialog = NewConnectionDialog(self, stitcher)
         if new_connection_dialog.exec():
             segments = new_connection_dialog.get_segments()
-            connection = stitcher.create_connection(segments)
+            connection = self._model.create_connection(segments)
             if connection:
-                self._model.set_current_connection(connection)
                 self._build_connections_list()
 
     def _connectionDelete_buttonClicked(self):
@@ -402,12 +403,21 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
             QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
             QtWidgets.QMessageBox.StandardButton.No)
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            stitcher = self._model.get_stitcher()
-            stitcher.delete_connection(connection)
-            connections = stitcher.get_connections()
-            connection = connections[0] if connections else None
-            self._model.set_current_connection(connection)
+            self._model.delete_connection(connection)
             self._build_connections_list()
+
+    def _connectionsOptimiseTransformation_buttonPressed(self):
+        connection = self._model.get_current_connection()
+        dependent_segment = connection.get_segments()[1]
+        reply = QtWidgets.QMessageBox.question(
+            self, 'Confirm action',
+            'Optimise transformation of segment \'' + dependent_segment.get_name() + '\'?',
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No)
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            self._model.connection_optimise_transformation(connection)
+            if self._model.get_current_segment() == dependent_segment:
+                self._refresh_segment_data()
 
     def _displayAxes_clicked(self):
         self._model.set_display_axes(self._ui.displayAxes_checkBox.isChecked())

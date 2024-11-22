@@ -80,7 +80,7 @@ class Ui_SegmentationStitcherWidget(object):
         self.stepedit_scrollArea.setWidgetResizable(True)
         self.stepedit_scrollAreaWidgetContents = QWidget()
         self.stepedit_scrollAreaWidgetContents.setObjectName(u"stepedit_scrollAreaWidgetContents")
-        self.stepedit_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 360, 226))
+        self.stepedit_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 343, 92))
         self.verticalLayout_3 = QVBoxLayout(self.stepedit_scrollAreaWidgetContents)
         self.verticalLayout_3.setSpacing(0)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
@@ -97,11 +97,6 @@ class Ui_SegmentationStitcherWidget(object):
         self.formLayout = QFormLayout(self.segmentTransformation_groupBox)
         self.formLayout.setObjectName(u"formLayout")
         self.formLayout.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
-        self.segmentTransformationCalculate_pushButton = QPushButton(self.segmentTransformation_groupBox)
-        self.segmentTransformationCalculate_pushButton.setObjectName(u"segmentTransformationCalculate_pushButton")
-
-        self.formLayout.setWidget(0, QFormLayout.FieldRole, self.segmentTransformationCalculate_pushButton)
-
         self.segmentRotation_label = QLabel(self.segmentTransformation_groupBox)
         self.segmentRotation_label.setObjectName(u"segmentRotation_label")
 
@@ -165,6 +160,11 @@ class Ui_SegmentationStitcherWidget(object):
         self.connections_listWidget.setObjectName(u"connections_listWidget")
 
         self.formLayout_3.setWidget(1, QFormLayout.SpanningRole, self.connections_listWidget)
+
+        self.connectionsOptimiseTransformation_pushButton = QPushButton(self.connections_groupBox)
+        self.connectionsOptimiseTransformation_pushButton.setObjectName(u"connectionsOptimiseTransformation_pushButton")
+
+        self.formLayout_3.setWidget(0, QFormLayout.FieldRole, self.connectionsOptimiseTransformation_pushButton)
 
 
         self.verticalLayout.addWidget(self.connections_groupBox)
@@ -488,12 +488,15 @@ class Ui_SegmentationStitcherWidget(object):
         self.identifier_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Identifier", None))
         self.segments_groupBox.setTitle(QCoreApplication.translate("SegmentationStitcherWidget", u"Segments:", None))
         self.segmentTransformation_groupBox.setTitle(QCoreApplication.translate("SegmentationStitcherWidget", u"Transformation:", None))
-        self.segmentTransformationCalculate_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Calculate...", None))
         self.segmentRotation_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Rotation:", None))
         self.segmentTranslation_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Translation:", None))
         self.connections_groupBox.setTitle(QCoreApplication.translate("SegmentationStitcherWidget", u"Connections:", None))
         self.conntectionsNew_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"New...", None))
         self.connectionsDelete_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Delete...", None))
+#if QT_CONFIG(tooltip)
+        self.connectionsOptimiseTransformation_pushButton.setToolTip(QCoreApplication.translate("SegmentationStitcherWidget", u"<html><head/><body><p>Optimise transformation of second/dependent segment to fit first/base segment.</p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.connectionsOptimiseTransformation_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Optimise Transformation...", None))
         self.displayMarkerNames_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Marker names", None))
         self.displayMarkerPoints_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Marker points", None))
         self.displayAxes_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Axes", None))

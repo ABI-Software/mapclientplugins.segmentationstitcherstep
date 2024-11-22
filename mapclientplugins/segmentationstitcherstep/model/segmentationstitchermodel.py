@@ -5,12 +5,13 @@ import math
 import os
 import json
 
+from cmlibs.maths.vectorops import add, axis_angle_to_rotation_matrix, euler_to_rotation_matrix, matrix_mult, \
+    rotation_matrix_to_euler
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range
-from cmlibs.utils.zinc.general import ChangeManager, HierarchicalChangeManager
-from cmlibs.maths.vectorops import euler_to_rotation_matrix
-from cmlibs.zinc.field import Field, FieldGroup
+from cmlibs.utils.zinc.general import ChangeManager
+from cmlibs.zinc.field import Field
 from cmlibs.zinc.glyph import Glyph
-from cmlibs.zinc.graphics import Graphics, Graphicslineattributes
+from cmlibs.zinc.graphics import Graphicslineattributes
 from cmlibs.zinc.material import Material
 from cmlibs.zinc.scenefilter import Scenefilter
 from segmentationstitcher.annotation import AnnotationCategory
@@ -57,11 +58,12 @@ class SegmentationStitcherModel(object):
         self.create_graphics()
         segments = self._stitcher.get_segments()
         for segment in segments:
-            self.set_segment_scene_transformation(segment)
+            self._set_segment_scene_transformation(segment)
         self._current_segment = segments[0] if segments else None
         connections = self._stitcher.get_connections()
         self._current_connection = connections[0] if connections else None
         self._current_annotation = None
+        self._segmentDataChangeCallback = None
 
     def _init_graphics_modules(self):
         context = self._stitcher.get_context()
@@ -88,8 +90,8 @@ class SegmentationStitcherModel(object):
         glyphmodule = context.getGlyphmodule()
         glyphmodule.defineStandardGlyphs()
         tessellationmodule = context.getTessellationmodule()
-        defaultTessellation = tessellationmodule.getDefaultTessellation()
-        defaultTessellation.setRefinementFactors([12])
+        default_tessellation = tessellationmodule.getDefaultTessellation()
+        default_tessellation.setRefinementFactors([12])
 
     def _get_settings_file_name(self):
         return self._location + "-settings.json"
@@ -159,6 +161,41 @@ class SegmentationStitcherModel(object):
         if self._current_annotation:
             self._current_annotation.set_category_by_name(annotation_category_name)
 
+    def setSegmentDataChangeCallback(self, segmentDataChangeCallback):
+        self._segmentDataChangeCallback = segmentDataChangeCallback
+
+    def _segmentDataChanged(self, segment):
+        if self._segmentDataChangeCallback:
+            self._segmentDataChangeCallback(segment)
+
+    def create_connection(self, segments):
+        connection = self._stitcher.create_connection(segments)
+        if connection:
+            self.set_current_connection(connection)
+            self._create_connection_graphics(only_connection=connection)
+        return connection
+
+    def delete_connection(self, connection):
+        self._stitcher.delete_connection(connection)
+        connections = self._stitcher.get_connections()
+        connection = connections[0] if connections else None
+        self.set_current_connection(connection)
+
+    def connection_optimise_transformation(self, connection):
+        connection.optimise_transformation()
+        segment = connection.get_segments()[1]
+        self._set_segment_scene_transformation(segment)
+        self._segmentDataChanged(segment)
+
+    def get_current_connection(self):
+        """
+        :return: Current connection or None if none.
+        """
+        return self._current_connection
+
+    def set_current_connection(self, connection):
+        self._current_connection = connection
+
     def get_current_segment(self):
         """
         :return: Current segment or None if none.
@@ -168,7 +205,7 @@ class SegmentationStitcherModel(object):
     def set_current_segment(self, segment):
         self._current_segment = segment
 
-    def set_segment_scene_transformation(self, segment):
+    def _set_segment_scene_transformation(self, segment):
         """
         Set the scene 4x4 matrix transformation to match the rotation and translation of segment.
         :param segment: Segment to transform.
@@ -184,23 +221,51 @@ class SegmentationStitcherModel(object):
         base_scene = segment.get_base_region().getScene()
         base_scene.setTransformationMatrix(transformation_matrix_4x4)
 
-    def get_current_connection(self):
+    def set_segment_rotation(self, segment, rotation):
         """
-        :return: Current connection or None if none.
+        Set the segment's transformation and update graphics transformation.
+        :param segment: Segment to modify.
+        :param rotation: 3 Euler angles in degrees.
         """
-        return self._current_connection
+        segment.set_rotation(rotation)
+        self._set_segment_scene_transformation(segment)
+        self._segmentDataChanged(segment)
 
-    def set_current_connection(self, connection):
-        self._current_connection = connection
+    def set_segment_translation(self, segment, translation):
+        """
+        Set the segment's transformation and update graphics transformation.
+        :param segment: Segment to modify.
+        """
+        segment.set_translation(translation)
+        self._set_segment_scene_transformation(segment)
+        self._segmentDataChanged(segment)
 
     def _get_visibility(self, graphics_name):
         return self._display_settings[graphics_name]
+
+    def _set_root_visibility(self, graphics_name, show):
+        self._display_settings[graphics_name] = show
+        region = self.get_root_region()
+        scene = region.getScene()
+        graphics = scene.findGraphicsByName(graphics_name)
+        if graphics.isValid():
+            graphics.setVisibilityFlag(show)
 
     def _set_raw_visibility(self, graphics_name, show):
         self._display_settings[graphics_name] = show
         segments = self._stitcher.get_segments()
         for segment in segments:
             region = segment.get_raw_region()
+            scene = region.getScene()
+            graphics = scene.findGraphicsByName(graphics_name)
+            if graphics.isValid():
+                graphics.setVisibilityFlag(show)
+
+    def _set_line_visibility(self, graphics_name, show):
+        self._set_raw_visibility(graphics_name, show)
+        connections = self._stitcher.get_connections()
+        for connection in connections:
+            region = connection.get_region()
             scene = region.getScene()
             graphics = scene.findGraphicsByName(graphics_name)
             if graphics.isValid():
@@ -231,12 +296,21 @@ class SegmentationStitcherModel(object):
                 line_attr = graphics.getGraphicslineattributes()
                 line_attr.setShapeType(Graphicslineattributes.SHAPE_TYPE_CIRCLE_EXTRUSION
                                        if show_radius else Graphicslineattributes.SHAPE_TYPE_LINE)
+        connections = self._stitcher.get_connections()
+        for connection in connections:
+            region = connection.get_region()
+            scene = region.getScene()
+            graphics = scene.findGraphicsByName(graphics_name)
+            if graphics.isValid():
+                line_attr = graphics.getGraphicslineattributes()
+                line_attr.setShapeType(Graphicslineattributes.SHAPE_TYPE_CIRCLE_EXTRUSION
+                                       if show_radius else Graphicslineattributes.SHAPE_TYPE_LINE)
 
     def is_display_axes(self):
         return self._get_visibility("display_axes")
 
     def set_display_axes(self, show):
-        self._set_raw_visibility("display_axes", show)
+        self._set_root_visibility("display_axes", show)
 
     def is_display_marker_points(self):
         return self._get_visibility("display_marker_points")
@@ -254,7 +328,7 @@ class SegmentationStitcherModel(object):
         return self._get_visibility("display_line_general")
 
     def set_display_line_general(self, show):
-        self._set_raw_visibility("display_line_general", show)
+        self._set_line_visibility("display_line_general", show)
 
     def is_display_line_general_radius(self):
         return self._get_line_radius("display_line_general")
@@ -266,7 +340,7 @@ class SegmentationStitcherModel(object):
         return self._get_visibility("display_independent_networks")
 
     def set_display_independent_networks(self, show):
-        self._set_raw_visibility("display_independent_networks", show)
+        self._set_line_visibility("display_independent_networks", show)
 
     def is_display_independent_networks_radius(self):
         return self._get_line_radius("display_independent_networks")
@@ -278,7 +352,7 @@ class SegmentationStitcherModel(object):
         return self._get_visibility("display_network_group_1")
 
     def set_display_network_group_1(self, show):
-        self._set_raw_visibility("display_network_group_1", show)
+        self._set_line_visibility("display_network_group_1", show)
 
     def is_display_network_group_1_radius(self):
         return self._get_line_radius("display_network_group_1")
@@ -290,7 +364,7 @@ class SegmentationStitcherModel(object):
         return self._get_visibility("display_network_group_2")
 
     def set_display_network_group_2(self, show):
-        self._set_raw_visibility("display_network_group_2", show)
+        self._set_line_visibility("display_network_group_2", show)
 
     def is_display_network_group_2_radius(self):
         return self._get_line_radius("display_network_group_2")
@@ -336,9 +410,6 @@ class SegmentationStitcherModel(object):
             "display_network_group_1",
             "display_network_group_2"
         ]
-        working_point_graphics_names = [
-            "display_end_point_directions"
-        ]
         segments = self._stitcher.get_segments()
         for segment in segments:
             raw_region = segment.get_raw_region()
@@ -358,6 +429,16 @@ class SegmentationStitcherModel(object):
                 end_point_best_fit_lines = working_scene.findGraphicsByName("display_end_point_best_fit_lines")
                 point_attr = end_point_best_fit_lines.getGraphicspointattributes()
                 point_attr.setScaleFactors([1.0, 2.0 * radius_scale, 2.0 * radius_scale])
+        connections = self._stitcher.get_connections()
+        for connection in connections:
+            region = connection.get_region()
+            scene = region.getScene()
+            with ChangeManager(scene):
+                for graphics_name in raw_line_graphics_names:
+                    graphics = scene.findGraphicsByName(graphics_name)
+                    if graphics.isValid():
+                        line_attr = graphics.getGraphicslineattributes()
+                        line_attr.setScaleFactors([2.0 * radius_scale])
 
     def create_graphics(self):
         root_region = self.get_root_region()
@@ -406,110 +487,129 @@ class SegmentationStitcherModel(object):
             axes.setName("display_axes")
             axes.setVisibilityFlag(self._display_settings["display_axes"])
 
-        radius_scale = self.get_radius_scale()
-        for segment in segments:
-            region = segment.get_raw_region()
+            radius_scale = self.get_radius_scale()
+            for segment in segments:
+                region = segment.get_raw_region()
+                fieldmodule = region.getFieldmodule()
+                coordinates = fieldmodule.findFieldByName("coordinates")
+                marker_group = fieldmodule.findFieldByName("marker").castGroup()
+                if marker_group.isValid():
+                    marker_coordinates = fieldmodule.findFieldByName("marker coordinates")
+                    if not marker_coordinates.isValid():
+                        marker_coordinates = coordinates
+                    marker_name = fieldmodule.findFieldByName("marker_name")
+                    if not marker_name.isValid():
+                        marker_name = None
+                else:
+                    marker_group = None
+                    marker_coordinates = None
+                    marker_name = None
+                radius = fieldmodule.findFieldByName("radius")
+                if not radius.isValid():
+                    radius = None
+                scene = region.getScene()
+                with ChangeManager(scene):
+                    scene.removeAllGraphics()
+
+                    marker_points = scene.createGraphicsPoints()
+                    marker_points.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+                    if marker_group:
+                        marker_points.setSubgroupField(marker_group)
+                    if marker_coordinates:
+                        marker_points.setCoordinateField(marker_coordinates)
+                    point_attr = marker_points.getGraphicspointattributes()
+                    point_attr.setBaseSize([glyph_width_small, glyph_width_small, glyph_width_small])
+                    point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CROSS)
+                    marker_points.setMaterial(self._materialmodule.findMaterialByName("white"))
+                    marker_points.setName("display_marker_points")
+                    marker_points.setVisibilityFlag(self.is_display_marker_points())
+
+                    marker_names = scene.createGraphicsPoints()
+                    marker_names.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+                    if marker_group:
+                        marker_names.setSubgroupField(marker_group)
+                    if marker_coordinates:
+                        marker_names.setCoordinateField(marker_coordinates)
+                    point_attr = marker_names.getGraphicspointattributes()
+                    point_attr.setBaseSize([glyph_width_small, glyph_width_small, glyph_width_small])
+                    point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_NONE)
+                    if marker_name:
+                        point_attr.setLabelField(marker_name)
+                    marker_names.setMaterial(self._materialmodule.findMaterialByName("white"))
+                    marker_names.setName("display_marker_names")
+                    marker_names.setVisibilityFlag(self.is_display_marker_names())
+
+                    self._create_category_graphics(segment, scene, coordinates, radius, radius_scale)
+
+                working_region = segment.get_working_region()
+                working_scene = working_region.getScene()
+                end_point_coordinates, end_point_radius_direction, end_point_best_fit_line_orientation = (
+                    segment.get_end_point_fields())
+                show_radius = self.is_display_end_point_radius()
+                with ChangeManager(working_scene):
+                    working_scene.removeAllGraphics()
+
+                    end_point_directions = working_scene.createGraphicsPoints()
+                    end_point_directions.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+                    end_point_directions.setCoordinateField(end_point_coordinates)
+                    point_attr = end_point_directions.getGraphicspointattributes()
+                    point_attr.setBaseSize([0.0, 0.0, 0.0])
+                    point_attr.setOrientationScaleField(end_point_radius_direction)
+                    point_attr.setScaleFactors([2.0 * radius_scale, 2.0 * radius_scale, 2.0 * radius_scale])
+                    point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CONE)
+                    end_point_directions.setMaterial(self._materialmodule.findMaterialByName("silver"))
+                    end_point_directions.setName("display_end_point_directions")
+                    end_point_directions.setVisibilityFlag(self.is_display_end_point_directions())
+
+                    end_point_best_fit_lines = working_scene.createGraphicsPoints()
+                    end_point_best_fit_lines.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+                    end_point_best_fit_lines.setCoordinateField(end_point_coordinates)
+                    point_attr = end_point_best_fit_lines.getGraphicspointattributes()
+                    point_attr.setBaseSize([0.0, 0.0, 0.0])
+                    point_attr.setOrientationScaleField(end_point_best_fit_line_orientation)
+                    point_attr.setScaleFactors([1.0, 2.0 * radius_scale, 2.0 * radius_scale])
+                    point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CYLINDER if show_radius else Glyph.SHAPE_TYPE_LINE)
+                    # end_point_best_fit_lines.setRenderPolygonMode(Graphics.RENDER_POLYGON_MODE_WIREFRAME)
+                    end_point_best_fit_lines.setMaterial(self._materialmodule.findMaterialByName("grey50"))
+                    end_point_best_fit_lines.setName("display_end_point_best_fit_lines")
+                    end_point_best_fit_lines.setVisibilityFlag(self.is_display_end_point_best_fit_lines())
+
+            self._create_connection_graphics()
+
+    def _create_connection_graphics(self, only_connection=None):
+        for connection in [only_connection] if only_connection else self._stitcher.get_connections():
+            region = connection.get_region()
             fieldmodule = region.getFieldmodule()
             coordinates = fieldmodule.findFieldByName("coordinates")
-            marker_group = fieldmodule.findFieldByName("marker").castGroup()
-            if marker_group.isValid():
-                marker_coordinates = fieldmodule.findFieldByName("marker coordinates")
-                if not marker_coordinates.isValid():
-                    marker_coordinates = coordinates
-                marker_name = fieldmodule.findFieldByName("marker_name")
-                if not marker_name.isValid():
-                    marker_name = None
-            else:
-                marker_group = None
-                marker_coordinates = None
-                marker_name = None
             radius = fieldmodule.findFieldByName("radius")
             if not radius.isValid():
                 radius = None
+            radius_scale = self.get_radius_scale()
             scene = region.getScene()
             with ChangeManager(scene):
                 scene.removeAllGraphics()
+                self._create_category_graphics(connection, scene, coordinates, radius, radius_scale)
 
-                markerPoints = scene.createGraphicsPoints()
-                markerPoints.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
-                if marker_group:
-                    markerPoints.setSubgroupField(marker_group)
-                if marker_coordinates:
-                    markerPoints.setCoordinateField(marker_coordinates)
-                point_attr = markerPoints.getGraphicspointattributes()
-                point_attr.setBaseSize([glyph_width_small, glyph_width_small, glyph_width_small])
-                point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CROSS)
-                markerPoints.setMaterial(self._materialmodule.findMaterialByName("white"))
-                markerPoints.setName("display_marker_points")
-                markerPoints.setVisibilityFlag(self.is_display_marker_points())
-
-                markerNames = scene.createGraphicsPoints()
-                markerNames.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
-                if marker_group:
-                    markerNames.setSubgroupField(marker_group)
-                if marker_coordinates:
-                    markerNames.setCoordinateField(marker_coordinates)
-                point_attr = markerNames.getGraphicspointattributes()
-                point_attr.setBaseSize([glyph_width_small, glyph_width_small, glyph_width_small])
-                point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_NONE)
-                if marker_name:
-                    point_attr.setLabelField(marker_name)
-                markerNames.setMaterial(self._materialmodule.findMaterialByName("white"))
-                markerNames.setName("display_marker_names")
-                markerNames.setVisibilityFlag(self.is_display_marker_names())
-
-                for category, settings_name, material_name in [
-                        (AnnotationCategory.GENERAL, "display_line_general", "green"),
-                        (AnnotationCategory.INDEPENDENT_NETWORK, "display_independent_networks", "yellow"),
-                        (AnnotationCategory.NETWORK_GROUP_1, "display_network_group_1", "solid_blue"),
-                        (AnnotationCategory.NETWORK_GROUP_2, "display_network_group_2", "orange")]:
-                    category_group = segment.get_category_group(category)
-                    lines = scene.createGraphicsLines()
-                    lines.setSubgroupField(category_group)
-                    lines.setCoordinateField(coordinates)
-                    line_attr = lines.getGraphicslineattributes()
-                    if radius:
-                        line_attr.setOrientationScaleField(radius)
-                        line_attr.setScaleFactors([2.0 * radius_scale])
-                    line_attr.setShapeType(Graphicslineattributes.SHAPE_TYPE_CIRCLE_EXTRUSION
-                                           if self._display_settings[settings_name + "_radius"] else
-                                           Graphicslineattributes.SHAPE_TYPE_LINE)
-                    lines.setMaterial(self._materialmodule.findMaterialByName(material_name))
-                    lines.setName(settings_name)
-                    lines.setVisibilityFlag(self._display_settings[settings_name])
-
-            working_region = segment.get_working_region()
-            working_scene = working_region.getScene()
-            end_point_coordinates, end_point_radius_direction, end_point_best_fit_line_orientation =(
-                segment.get_end_point_fields())
-            show_radius = self.is_display_end_point_radius()
-            with ChangeManager(working_scene):
-                working_scene.removeAllGraphics()
-
-                end_point_directions = working_scene.createGraphicsPoints()
-                end_point_directions.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
-                end_point_directions.setCoordinateField(end_point_coordinates)
-                point_attr = end_point_directions.getGraphicspointattributes()
-                point_attr.setBaseSize([0.0, 0.0, 0.0])
-                point_attr.setOrientationScaleField(end_point_radius_direction)
-                point_attr.setScaleFactors([2.0 * radius_scale, 2.0 * radius_scale, 2.0 * radius_scale])
-                point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CONE)
-                end_point_directions.setMaterial(self._materialmodule.findMaterialByName("silver"))
-                end_point_directions.setName("display_end_point_directions")
-                end_point_directions.setVisibilityFlag(self.is_display_end_point_directions())
-
-                end_point_best_fit_lines = working_scene.createGraphicsPoints()
-                end_point_best_fit_lines.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
-                end_point_best_fit_lines.setCoordinateField(end_point_coordinates)
-                point_attr = end_point_best_fit_lines.getGraphicspointattributes()
-                point_attr.setBaseSize([0.0, 0.0, 0.0])
-                point_attr.setOrientationScaleField(end_point_best_fit_line_orientation)
-                point_attr.setScaleFactors([1.0, 2.0 * radius_scale, 2.0 * radius_scale])
-                point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CYLINDER if show_radius else Glyph.SHAPE_TYPE_LINE)
-                # end_point_best_fit_lines.setRenderPolygonMode(Graphics.RENDER_POLYGON_MODE_WIREFRAME)
-                end_point_best_fit_lines.setMaterial(self._materialmodule.findMaterialByName("grey50"))
-                end_point_best_fit_lines.setName("display_end_point_best_fit_lines")
-                end_point_best_fit_lines.setVisibilityFlag(self.is_display_end_point_best_fit_lines())
+    def _create_category_graphics(self, object, scene, coordinates, radius, radius_scale):
+        for category, settings_name, material_name in [
+                (AnnotationCategory.GENERAL, "display_line_general", "green"),
+                (AnnotationCategory.INDEPENDENT_NETWORK, "display_independent_networks", "yellow"),
+                (AnnotationCategory.NETWORK_GROUP_1, "display_network_group_1", "solid_blue"),
+                (AnnotationCategory.NETWORK_GROUP_2, "display_network_group_2", "orange")]:
+            category_group = object.get_category_group(category)
+            lines = scene.createGraphicsLines()
+            lines.setSubgroupField(category_group)
+            lines.setCoordinateField(coordinates)
+            line_attr = lines.getGraphicslineattributes()
+            if radius:
+                line_attr.setOrientationScaleField(radius)
+                line_attr.setScaleFactors([2.0 * radius_scale])
+            line_attr.setShapeType(Graphicslineattributes.SHAPE_TYPE_CIRCLE_EXTRUSION
+                                   if self._display_settings[settings_name + "_radius"] else
+                                   Graphicslineattributes.SHAPE_TYPE_LINE)
+            lines.setMaterial(self._materialmodule.findMaterialByName(material_name))
+            lines.setName(settings_name)
+            lines.setVisibilityFlag(self._display_settings[settings_name])
 
     def autorange_spectrum(self):
         scene = self.get_root_region().getScene()
@@ -520,19 +620,29 @@ class SegmentationStitcherModel(object):
     # === Align Utilities ===
 
     def isStateAlign(self):
-        return False
+        return True
 
     def rotateModel(self, axis, angle):
-        print("rotateModel", axis, angle)
+        if self._current_segment:
+            mat1 = axis_angle_to_rotation_matrix(axis, angle)
+            rotation = self._current_segment.get_rotation()
+            mat2 = euler_to_rotation_matrix([math.radians(deg) for deg in rotation])
+            product_mat = matrix_mult(mat1, mat2)
+            new_rotation = [math.degrees(rad) for rad in rotation_matrix_to_euler(product_mat)]
+            self.set_segment_rotation(self._current_segment, new_rotation)
 
     def scaleModel(self, factor):
-        print("rotateModel", factor)
+        pass
 
     def offsetModel(self, relative_offset):
-        print("offsetModel", relative_offset)
+        translation = self._current_segment.get_translation()
+        new_translation = add(translation, relative_offset)
+        self.set_segment_translation(self._current_segment, new_translation)
 
     def interactionStart(self):
-        print("interactionStart")
+        # print("interactionStart")
+        pass
 
     def interactionEnd(self):
-        print("interactionEnd")
+        # print("interactionEnd")
+        pass
