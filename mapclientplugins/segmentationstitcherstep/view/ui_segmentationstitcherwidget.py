@@ -27,7 +27,7 @@ class Ui_SegmentationStitcherWidget(object):
     def setupUi(self, SegmentationStitcherWidget):
         if not SegmentationStitcherWidget.objectName():
             SegmentationStitcherWidget.setObjectName(u"SegmentationStitcherWidget")
-        SegmentationStitcherWidget.resize(1137, 921)
+        SegmentationStitcherWidget.resize(1137, 878)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -80,7 +80,7 @@ class Ui_SegmentationStitcherWidget(object):
         self.stepedit_scrollArea.setWidgetResizable(True)
         self.stepedit_scrollAreaWidgetContents = QWidget()
         self.stepedit_scrollAreaWidgetContents.setObjectName(u"stepedit_scrollAreaWidgetContents")
-        self.stepedit_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 343, 92))
+        self.stepedit_scrollAreaWidgetContents.setGeometry(QRect(0, -23, 343, 92))
         self.verticalLayout_3 = QVBoxLayout(self.stepedit_scrollAreaWidgetContents)
         self.verticalLayout_3.setSpacing(0)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
@@ -161,10 +161,10 @@ class Ui_SegmentationStitcherWidget(object):
 
         self.formLayout_3.setWidget(1, QFormLayout.SpanningRole, self.connections_listWidget)
 
-        self.connectionsOptimiseTransformation_pushButton = QPushButton(self.connections_groupBox)
-        self.connectionsOptimiseTransformation_pushButton.setObjectName(u"connectionsOptimiseTransformation_pushButton")
+        self.connectionsOptimizeAlignment_pushButton = QPushButton(self.connections_groupBox)
+        self.connectionsOptimizeAlignment_pushButton.setObjectName(u"connectionsOptimizeAlignment_pushButton")
 
-        self.formLayout_3.setWidget(0, QFormLayout.FieldRole, self.connectionsOptimiseTransformation_pushButton)
+        self.formLayout_3.setWidget(0, QFormLayout.FieldRole, self.connectionsOptimizeAlignment_pushButton)
 
 
         self.verticalLayout.addWidget(self.connections_groupBox)
@@ -241,6 +241,11 @@ class Ui_SegmentationStitcherWidget(object):
 
         self.horizontalLayout_9.addWidget(self.displayLineGeneralRadius_checkBox)
 
+        self.displayLineGeneralTrans_checkBox = QCheckBox(self.displayLineGeneral_frame)
+        self.displayLineGeneralTrans_checkBox.setObjectName(u"displayLineGeneralTrans_checkBox")
+
+        self.horizontalLayout_9.addWidget(self.displayLineGeneralTrans_checkBox)
+
 
         self.verticalLayout_4.addWidget(self.displayLineGeneral_frame)
 
@@ -260,6 +265,11 @@ class Ui_SegmentationStitcherWidget(object):
         self.displayIndepNetworksRadius_checkBox.setObjectName(u"displayIndepNetworksRadius_checkBox")
 
         self.horizontalLayout_10.addWidget(self.displayIndepNetworksRadius_checkBox)
+
+        self.displayIndepNetworksTrans_checkBox = QCheckBox(self.displayIndepNetworks_frame)
+        self.displayIndepNetworksTrans_checkBox.setObjectName(u"displayIndepNetworksTrans_checkBox")
+
+        self.horizontalLayout_10.addWidget(self.displayIndepNetworksTrans_checkBox)
 
 
         self.verticalLayout_4.addWidget(self.displayIndepNetworks_frame)
@@ -283,6 +293,11 @@ class Ui_SegmentationStitcherWidget(object):
 
         self.horizontalLayout_6.addWidget(self.displayNetworkGroup1Radius_checkBox)
 
+        self.displayNetworkGroup1Trans_checkBox = QCheckBox(self.displayNetworkGroup1_frame)
+        self.displayNetworkGroup1Trans_checkBox.setObjectName(u"displayNetworkGroup1Trans_checkBox")
+
+        self.horizontalLayout_6.addWidget(self.displayNetworkGroup1Trans_checkBox)
+
 
         self.verticalLayout_4.addWidget(self.displayNetworkGroup1_frame)
 
@@ -305,6 +320,11 @@ class Ui_SegmentationStitcherWidget(object):
 
         self.horizontalLayout_4.addWidget(self.displayNetworkGroup2Radius_checkBox)
 
+        self.displayNetworkGroup2Trans_checkBox = QCheckBox(self.displayNetworkGroup2_frame)
+        self.displayNetworkGroup2Trans_checkBox.setObjectName(u"displayNetworkGroup2Trans_checkBox")
+
+        self.horizontalLayout_4.addWidget(self.displayNetworkGroup2Trans_checkBox)
+
 
         self.verticalLayout_4.addWidget(self.displayNetworkGroup2_frame)
 
@@ -315,6 +335,11 @@ class Ui_SegmentationStitcherWidget(object):
         self.displayEndPoint_groupBox.setObjectName(u"displayEndPoint_groupBox")
         self.horizontalLayout_7 = QHBoxLayout(self.displayEndPoint_groupBox)
         self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.displayEndPointBestFitLines_checkBox = QCheckBox(self.displayEndPoint_groupBox)
+        self.displayEndPointBestFitLines_checkBox.setObjectName(u"displayEndPointBestFitLines_checkBox")
+
+        self.horizontalLayout_7.addWidget(self.displayEndPointBestFitLines_checkBox)
+
         self.displayEndPointDirections_checkBox = QCheckBox(self.displayEndPoint_groupBox)
         self.displayEndPointDirections_checkBox.setObjectName(u"displayEndPointDirections_checkBox")
         sizePolicy3.setHeightForWidth(self.displayEndPointDirections_checkBox.sizePolicy().hasHeightForWidth())
@@ -322,15 +347,15 @@ class Ui_SegmentationStitcherWidget(object):
 
         self.horizontalLayout_7.addWidget(self.displayEndPointDirections_checkBox)
 
-        self.displayEndPointBestFitLines_checkBox = QCheckBox(self.displayEndPoint_groupBox)
-        self.displayEndPointBestFitLines_checkBox.setObjectName(u"displayEndPointBestFitLines_checkBox")
-
-        self.horizontalLayout_7.addWidget(self.displayEndPointBestFitLines_checkBox)
-
         self.displayEndPointRadius_checkBox = QCheckBox(self.displayEndPoint_groupBox)
         self.displayEndPointRadius_checkBox.setObjectName(u"displayEndPointRadius_checkBox")
 
         self.horizontalLayout_7.addWidget(self.displayEndPointRadius_checkBox)
+
+        self.displayEndPointTrans_checkBox = QCheckBox(self.displayEndPoint_groupBox)
+        self.displayEndPointTrans_checkBox.setObjectName(u"displayEndPointTrans_checkBox")
+
+        self.horizontalLayout_7.addWidget(self.displayEndPointTrans_checkBox)
 
 
         self.verticalLayout_7.addWidget(self.displayEndPoint_groupBox)
@@ -419,6 +444,16 @@ class Ui_SegmentationStitcherWidget(object):
 
         self.formLayout_2.setWidget(0, QFormLayout.FieldRole, self.annotationName_comboBox)
 
+        self.annotationCategoryAlignWeight_label = QLabel(self.annotations_group_frame)
+        self.annotationCategoryAlignWeight_label.setObjectName(u"annotationCategoryAlignWeight_label")
+
+        self.formLayout_2.setWidget(4, QFormLayout.LabelRole, self.annotationCategoryAlignWeight_label)
+
+        self.annotationCategoryAlignWeight_lineEdit = QLineEdit(self.annotations_group_frame)
+        self.annotationCategoryAlignWeight_lineEdit.setObjectName(u"annotationCategoryAlignWeight_lineEdit")
+
+        self.formLayout_2.setWidget(4, QFormLayout.FieldRole, self.annotationCategoryAlignWeight_lineEdit)
+
 
         self.verticalLayout_12.addWidget(self.annotations_group_frame)
 
@@ -494,31 +529,40 @@ class Ui_SegmentationStitcherWidget(object):
         self.conntectionsNew_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"New...", None))
         self.connectionsDelete_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Delete...", None))
 #if QT_CONFIG(tooltip)
-        self.connectionsOptimiseTransformation_pushButton.setToolTip(QCoreApplication.translate("SegmentationStitcherWidget", u"<html><head/><body><p>Optimise transformation of second/dependent segment to fit first/base segment.</p></body></html>", None))
+        self.connectionsOptimizeAlignment_pushButton.setToolTip(QCoreApplication.translate("SegmentationStitcherWidget", u"<html><head/><body><p>Optimize the transformation of the second segment in the selected connection to align it with ends points of the first segment.</p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
-        self.connectionsOptimiseTransformation_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Optimise Transformation...", None))
+        self.connectionsOptimizeAlignment_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Optimize Alignment...", None))
         self.displayMarkerNames_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Marker names", None))
         self.displayMarkerPoints_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Marker points", None))
         self.displayAxes_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Axes", None))
         self.displayLineCategories_groupBox.setTitle(QCoreApplication.translate("SegmentationStitcherWidget", u"Line Segmentations:", None))
         self.displayLineGeneral_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"General               ", None))
         self.displayLineGeneralRadius_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Radius", None))
+        self.displayLineGeneralTrans_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Trans.", None))
         self.displayIndepNetworks_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Indep. networks  ", None))
         self.displayIndepNetworksRadius_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Radius", None))
+        self.displayIndepNetworksTrans_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Trans.", None))
         self.displayNetworkGroup1_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Network group 1", None))
         self.displayNetworkGroup1Radius_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Radius", None))
+        self.displayNetworkGroup1Trans_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Trans.", None))
         self.displayNetworkGroup2_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Network group 2", None))
         self.displayNetworkGroup2Radius_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Radius", None))
+        self.displayNetworkGroup2Trans_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Trans.", None))
         self.displayEndPoint_groupBox.setTitle(QCoreApplication.translate("SegmentationStitcherWidget", u"End Points", None))
-        self.displayEndPointDirections_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Point directions", None))
-        self.displayEndPointBestFitLines_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Best fit lines", None))
+        self.displayEndPointBestFitLines_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Lines", None))
+        self.displayEndPointDirections_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Tips", None))
         self.displayEndPointRadius_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Radius", None))
+        self.displayEndPointTrans_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Trans.", None))
         self.displayRadiusScale_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Radius scale:", None))
         self.controls_tabWidget.setTabText(self.controls_tabWidget.indexOf(self.display_tab), QCoreApplication.translate("SegmentationStitcherWidget", u"Display", None))
         self.annotationName_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Name:", None))
         self.annotationTerm_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Term:", None))
         self.annotationDimension_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Dimension:", None))
         self.annotationCategory_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Category:", None))
+        self.annotationCategoryAlignWeight_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Align Weight:", None))
+#if QT_CONFIG(tooltip)
+        self.annotationCategoryAlignWeight_lineEdit.setToolTip(QCoreApplication.translate("SegmentationStitcherWidget", u"<html><head/><body><p>The weighting given to all annotations in this category when optimizing alignment.</p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
         self.controls_tabWidget.setTabText(self.controls_tabWidget.indexOf(self.annotations_tab), QCoreApplication.translate("SegmentationStitcherWidget", u"Annotations", None))
         self.documentation_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Online Documentation", None))
         self.viewAll_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"View All", None))

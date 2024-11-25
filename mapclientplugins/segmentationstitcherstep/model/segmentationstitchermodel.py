@@ -36,6 +36,13 @@ class SegmentationStitcherModel(object):
         self._stitcher = Stitcher(segmentation_file_locations, network_group_1_keywords, network_group2_keywords)
         self._location = os.path.join(location, step_identifier)
         self._step_identifier = step_identifier
+        self._category_graphics_info = [
+            (AnnotationCategory.GENERAL, "display_line_general", "green"),
+            (AnnotationCategory.INDEPENDENT_NETWORK, "display_independent_networks", "yellow"),
+            (AnnotationCategory.NETWORK_GROUP_1, "display_network_group_1", "mid blue"),
+            (AnnotationCategory.NETWORK_GROUP_2, "display_network_group_2", "orange")
+        ]
+        self._end_point_material_name = "grey50"
         self._init_graphics_modules()
         self._display_settings = {
             "display_axes": True,
@@ -43,15 +50,20 @@ class SegmentationStitcherModel(object):
             "display_marker_names": False,
             "display_line_general": True,
             "display_line_general_radius": False,
+            "display_line_general_trans": False,
             "display_network_group_1": True,
             "display_network_group_1_radius": False,
+            "display_network_group_1_trans": False,
             "display_network_group_2": True,
             "display_network_group_2_radius": False,
+            "display_network_group_2_trans": False,
             "display_independent_networks": True,
             "display_independent_networks_radius": False,
+            "display_independent_networks_trans": False,
             "display_end_point_directions": True,
             "display_end_point_best_fit_lines": True,
             "display_end_point_radius": False,
+            "display_end_point_trans": False,
             "display_radius_scale": 1.0
         }
         self._load_settings()
@@ -70,23 +82,27 @@ class SegmentationStitcherModel(object):
         self._materialmodule = context.getMaterialmodule()
         with ChangeManager(self._materialmodule):
             self._materialmodule.defineStandardMaterials()
-            solid_blue = self._materialmodule.createMaterial()
-            solid_blue.setName("solid_blue")
-            solid_blue.setManaged(True)
-            solid_blue.setAttributeReal3(Material.ATTRIBUTE_AMBIENT, [0.0, 0.2, 0.6])
-            solid_blue.setAttributeReal3(Material.ATTRIBUTE_DIFFUSE, [0.0, 0.7, 1.0])
-            solid_blue.setAttributeReal3(Material.ATTRIBUTE_EMISSION, [0.0, 0.0, 0.0])
-            solid_blue.setAttributeReal3(Material.ATTRIBUTE_SPECULAR, [0.1, 0.1, 0.1])
-            solid_blue.setAttributeReal(Material.ATTRIBUTE_SHININESS, 0.2)
-            trans_blue = self._materialmodule.createMaterial()
-            trans_blue.setName("trans_blue")
-            trans_blue.setManaged(True)
-            trans_blue.setAttributeReal3(Material.ATTRIBUTE_AMBIENT, [0.0, 0.2, 0.6])
-            trans_blue.setAttributeReal3(Material.ATTRIBUTE_DIFFUSE, [0.0, 0.7, 1.0])
-            trans_blue.setAttributeReal3(Material.ATTRIBUTE_EMISSION, [0.0, 0.0, 0.0])
-            trans_blue.setAttributeReal3(Material.ATTRIBUTE_SPECULAR, [0.1, 0.1, 0.1])
-            trans_blue.setAttributeReal(Material.ATTRIBUTE_ALPHA, 0.3)
-            trans_blue.setAttributeReal(Material.ATTRIBUTE_SHININESS, 0.2)
+            mid_blue = self._materialmodule.createMaterial()
+            mid_blue.setName("mid blue")
+            mid_blue.setManaged(True)
+            mid_blue.setAttributeReal3(Material.ATTRIBUTE_AMBIENT, [0.0, 0.2, 0.6])
+            mid_blue.setAttributeReal3(Material.ATTRIBUTE_DIFFUSE, [0.0, 0.7, 1.0])
+            mid_blue.setAttributeReal3(Material.ATTRIBUTE_EMISSION, [0.0, 0.0, 0.0])
+            mid_blue.setAttributeReal3(Material.ATTRIBUTE_SPECULAR, [0.1, 0.1, 0.1])
+            mid_blue.setAttributeReal(Material.ATTRIBUTE_SHININESS, 0.2)
+            line_material_names = [graphics_info[-1] for graphics_info in self._category_graphics_info]
+            for material_name in line_material_names + [self._end_point_material_name]:
+                material = self._materialmodule.findMaterialByName(material_name)
+                trans_material = self._materialmodule.createMaterial()
+                trans_material.setName("trans " + material_name)
+                trans_material.setManaged(True)
+                for attribute in [Material.ATTRIBUTE_AMBIENT, Material.ATTRIBUTE_DIFFUSE,
+                                  Material.ATTRIBUTE_EMISSION, Material.ATTRIBUTE_SPECULAR]:
+                    value = material.getAttributeReal3(attribute)[1]
+                    trans_material.setAttributeReal3(attribute, value)
+                trans_material.setAttributeReal(Material.ATTRIBUTE_SHININESS,
+                                                material.getAttributeReal(Material.ATTRIBUTE_SHININESS))
+                trans_material.setAttributeReal(Material.ATTRIBUTE_ALPHA, 0.5)
         glyphmodule = context.getGlyphmodule()
         glyphmodule.defineStandardGlyphs()
         tessellationmodule = context.getTessellationmodule()
@@ -306,6 +322,37 @@ class SegmentationStitcherModel(object):
                 line_attr.setShapeType(Graphicslineattributes.SHAPE_TYPE_CIRCLE_EXTRUSION
                                        if show_radius else Graphicslineattributes.SHAPE_TYPE_LINE)
 
+    def _category_graphics_name_to_material_name(self, graphics_name):
+        for graphics_info in self._category_graphics_info:
+            if graphics_info[1] == graphics_name:
+                return graphics_info[-1]
+        return None
+
+    def _get_line_trans(self, graphics_name):
+        return self._display_settings[graphics_name + "_trans"]
+
+    def _set_line_trans(self, graphics_name, trans):
+        trans_name = graphics_name + "_trans"
+        self._display_settings[trans_name] = trans
+        material_name = self._category_graphics_name_to_material_name(graphics_name)
+        if trans:
+            material_name = "trans " + material_name
+        material = self._materialmodule.findMaterialByName(material_name)
+        segments = self._stitcher.get_segments()
+        for segment in segments:
+            region = segment.get_raw_region()
+            scene = region.getScene()
+            graphics = scene.findGraphicsByName(graphics_name)
+            if graphics.isValid():
+                graphics.setMaterial(material)
+        connections = self._stitcher.get_connections()
+        for connection in connections:
+            region = connection.get_region()
+            scene = region.getScene()
+            graphics = scene.findGraphicsByName(graphics_name)
+            if graphics.isValid():
+                graphics.setMaterial(material)
+
     def is_display_axes(self):
         return self._get_visibility("display_axes")
 
@@ -336,6 +383,12 @@ class SegmentationStitcherModel(object):
     def set_display_line_general_radius(self, show_radius):
         self._set_line_radius("display_line_general", show_radius)
 
+    def is_display_line_general_trans(self):
+        return self._get_line_trans("display_line_general")
+
+    def set_display_line_general_trans(self, trans):
+        self._set_line_trans("display_line_general", trans)
+
     def is_display_independent_networks(self):
         return self._get_visibility("display_independent_networks")
 
@@ -347,6 +400,12 @@ class SegmentationStitcherModel(object):
 
     def set_display_independent_networks_radius(self, show_radius):
         self._set_line_radius("display_independent_networks", show_radius)
+
+    def is_display_independent_networks_trans(self):
+        return self._get_line_trans("display_independent_networks")
+
+    def set_display_independent_networks_trans(self, trans):
+        self._set_line_trans("display_independent_networks", trans)
 
     def is_display_network_group_1(self):
         return self._get_visibility("display_network_group_1")
@@ -360,6 +419,12 @@ class SegmentationStitcherModel(object):
     def set_display_network_group_1_radius(self, show_radius):
         self._set_line_radius("display_network_group_1", show_radius)
 
+    def is_display_network_group_1_trans(self):
+        return self._get_line_trans("display_network_group_1")
+
+    def set_display_network_group_1_trans(self, trans):
+        self._set_line_trans("display_network_group_1", trans)
+
     def is_display_network_group_2(self):
         return self._get_visibility("display_network_group_2")
 
@@ -371,6 +436,12 @@ class SegmentationStitcherModel(object):
 
     def set_display_network_group_2_radius(self, show_radius):
         self._set_line_radius("display_network_group_2", show_radius)
+
+    def is_display_network_group_2_trans(self):
+        return self._get_line_trans("display_network_group_2")
+
+    def set_display_network_group_2_trans(self, trans):
+        self._set_line_trans("display_network_group_2", trans)
 
     def is_display_end_point_directions(self):
         return self._get_visibility("display_end_point_directions")
@@ -398,6 +469,25 @@ class SegmentationStitcherModel(object):
             if graphics.isValid():
                 point_attr = graphics.getGraphicspointattributes()
                 point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CYLINDER if show_radius else Glyph.SHAPE_TYPE_LINE)
+
+    def is_display_end_point_trans(self):
+        return self._display_settings["display_end_point_trans"]
+
+    def set_display_end_point_trans(self, trans):
+        self._display_settings["display_end_point_trans"] = trans
+        material_name = self._end_point_material_name
+        if trans:
+            material_name = "trans " + material_name
+        material = self._materialmodule.findMaterialByName(material_name)
+        graphics_names = ["display_end_point_best_fit_lines", "display_end_point_directions"]
+        segments = self._stitcher.get_segments()
+        for segment in segments:
+            working_region = segment.get_working_region()
+            working_scene = working_region.getScene()
+            for graphics_name in graphics_names:
+                graphics = working_scene.findGraphicsByName(graphics_name)
+                if graphics.isValid():
+                    graphics.setMaterial(material)
 
     def get_radius_scale(self):
         return self._display_settings["display_radius_scale"]
@@ -549,6 +639,11 @@ class SegmentationStitcherModel(object):
                 with ChangeManager(working_scene):
                     working_scene.removeAllGraphics()
 
+                    material_name = self._end_point_material_name
+                    if self.is_display_end_point_trans():
+                        material_name = "trans " + material_name
+                    material = self._materialmodule.findMaterialByName(material_name)
+
                     end_point_directions = working_scene.createGraphicsPoints()
                     end_point_directions.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
                     end_point_directions.setCoordinateField(end_point_coordinates)
@@ -557,7 +652,7 @@ class SegmentationStitcherModel(object):
                     point_attr.setOrientationScaleField(end_point_radius_direction)
                     point_attr.setScaleFactors([2.0 * radius_scale, 2.0 * radius_scale, 2.0 * radius_scale])
                     point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CONE)
-                    end_point_directions.setMaterial(self._materialmodule.findMaterialByName("silver"))
+                    end_point_directions.setMaterial(material)
                     end_point_directions.setName("display_end_point_directions")
                     end_point_directions.setVisibilityFlag(self.is_display_end_point_directions())
 
@@ -569,8 +664,7 @@ class SegmentationStitcherModel(object):
                     point_attr.setOrientationScaleField(end_point_best_fit_line_orientation)
                     point_attr.setScaleFactors([1.0, 2.0 * radius_scale, 2.0 * radius_scale])
                     point_attr.setGlyphShapeType(Glyph.SHAPE_TYPE_CYLINDER if show_radius else Glyph.SHAPE_TYPE_LINE)
-                    # end_point_best_fit_lines.setRenderPolygonMode(Graphics.RENDER_POLYGON_MODE_WIREFRAME)
-                    end_point_best_fit_lines.setMaterial(self._materialmodule.findMaterialByName("grey50"))
+                    end_point_best_fit_lines.setMaterial(material)
                     end_point_best_fit_lines.setName("display_end_point_best_fit_lines")
                     end_point_best_fit_lines.setVisibilityFlag(self.is_display_end_point_best_fit_lines())
 
@@ -591,11 +685,7 @@ class SegmentationStitcherModel(object):
                 self._create_category_graphics(connection, scene, coordinates, radius, radius_scale)
 
     def _create_category_graphics(self, object, scene, coordinates, radius, radius_scale):
-        for category, settings_name, material_name in [
-                (AnnotationCategory.GENERAL, "display_line_general", "green"),
-                (AnnotationCategory.INDEPENDENT_NETWORK, "display_independent_networks", "yellow"),
-                (AnnotationCategory.NETWORK_GROUP_1, "display_network_group_1", "solid_blue"),
-                (AnnotationCategory.NETWORK_GROUP_2, "display_network_group_2", "orange")]:
+        for category, settings_name, material_name in self._category_graphics_info:
             category_group = object.get_category_group(category)
             lines = scene.createGraphicsLines()
             lines.setSubgroupField(category_group)
@@ -607,6 +697,8 @@ class SegmentationStitcherModel(object):
             line_attr.setShapeType(Graphicslineattributes.SHAPE_TYPE_CIRCLE_EXTRUSION
                                    if self._display_settings[settings_name + "_radius"] else
                                    Graphicslineattributes.SHAPE_TYPE_LINE)
+            if self._display_settings[settings_name + "_trans"]:
+                material_name = "trans " + material_name
             lines.setMaterial(self._materialmodule.findMaterialByName(material_name))
             lines.setName(settings_name)
             lines.setVisibilityFlag(self._display_settings[settings_name])

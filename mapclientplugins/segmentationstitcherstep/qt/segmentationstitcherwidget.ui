@@ -115,7 +115,7 @@
              <property name="geometry">
               <rect>
                <x>0</x>
-               <y>0</y>
+               <y>-23</y>
                <width>343</width>
                <height>92</height>
               </rect>
@@ -253,9 +253,12 @@
            <widget class="QListWidget" name="connections_listWidget"/>
           </item>
           <item row="0" column="1">
-           <widget class="QPushButton" name="connectionsOptimiseTransformation_pushButton">
+           <widget class="QPushButton" name="connectionsOptimizeAlignment_pushButton">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optimize the transformation of the second segment in the selected connection to align it with ends points of the first segment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="text">
-             <string>Optimise Transformation...</string>
+             <string>Optimize Alignment...</string>
             </property>
            </widget>
           </item>
@@ -394,6 +397,13 @@
                    </property>
                   </widget>
                  </item>
+                 <item>
+                  <widget class="QCheckBox" name="displayLineGeneralTrans_checkBox">
+                   <property name="text">
+                    <string>Trans.</string>
+                   </property>
+                  </widget>
+                 </item>
                 </layout>
                </widget>
               </item>
@@ -429,6 +439,13 @@
                   <widget class="QCheckBox" name="displayIndepNetworksRadius_checkBox">
                    <property name="text">
                     <string>Radius</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QCheckBox" name="displayIndepNetworksTrans_checkBox">
+                   <property name="text">
+                    <string>Trans.</string>
                    </property>
                   </widget>
                  </item>
@@ -476,6 +493,13 @@
                    </property>
                   </widget>
                  </item>
+                 <item>
+                  <widget class="QCheckBox" name="displayNetworkGroup1Trans_checkBox">
+                   <property name="text">
+                    <string>Trans.</string>
+                   </property>
+                  </widget>
+                 </item>
                 </layout>
                </widget>
               </item>
@@ -520,6 +544,13 @@
                    </property>
                   </widget>
                  </item>
+                 <item>
+                  <widget class="QCheckBox" name="displayNetworkGroup2Trans_checkBox">
+                   <property name="text">
+                    <string>Trans.</string>
+                   </property>
+                  </widget>
+                 </item>
                 </layout>
                </widget>
               </item>
@@ -533,6 +564,13 @@
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_7">
               <item>
+               <widget class="QCheckBox" name="displayEndPointBestFitLines_checkBox">
+                <property name="text">
+                 <string>Lines</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QCheckBox" name="displayEndPointDirections_checkBox">
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -541,14 +579,7 @@
                  </sizepolicy>
                 </property>
                 <property name="text">
-                 <string>Point directions</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="displayEndPointBestFitLines_checkBox">
-                <property name="text">
-                 <string>Best fit lines</string>
+                 <string>Tips</string>
                 </property>
                </widget>
               </item>
@@ -556,6 +587,13 @@
                <widget class="QCheckBox" name="displayEndPointRadius_checkBox">
                 <property name="text">
                  <string>Radius</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="displayEndPointTrans_checkBox">
+                <property name="text">
+                 <string>Trans.</string>
                 </property>
                </widget>
               </item>
@@ -695,6 +733,20 @@
               </item>
               <item row="0" column="1">
                <widget class="QComboBox" name="annotationName_comboBox"/>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="annotationCategoryAlignWeight_label">
+                <property name="text">
+                 <string>Align Weight:</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="annotationCategoryAlignWeight_lineEdit">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The weighting given to all annotations in this category when optimizing alignment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>
