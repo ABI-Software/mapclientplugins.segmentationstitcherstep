@@ -177,6 +177,21 @@ class SegmentationStitcherModel(object):
         if self._current_annotation:
             self._current_annotation.set_category_by_name(annotation_category_name)
 
+    def set_current_annotation_align_weight(self, align_weight, set_by_category):
+        """
+        :param align_weight: Weight used on annotation/category in optimize alignment.
+        :param set_by_category: If true set align_weight to all annotations in its current category.
+        """
+        if self._current_annotation:
+            if set_by_category:
+                category = self._current_annotation.get_category()
+                annotations = self._stitcher.get_annotations()
+                for annotation in annotations:
+                    if annotation.get_category() == category:
+                        annotation.set_align_weight(align_weight)
+            else:
+                self._current_annotation.set_align_weight(align_weight)
+
     def setSegmentDataChangeCallback(self, segmentDataChangeCallback):
         self._segmentDataChangeCallback = segmentDataChangeCallback
 

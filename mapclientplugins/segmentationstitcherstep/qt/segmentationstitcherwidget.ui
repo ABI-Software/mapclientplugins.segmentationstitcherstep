@@ -255,7 +255,7 @@
           <item row="0" column="1">
            <widget class="QPushButton" name="connectionsOptimizeAlignment_pushButton">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optimize the transformation of the second segment in the selected connection to align it with ends points of the first segment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optimize  transformation of the second segment in the selected connection to align its network end points with those of the first segment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Optimize Alignment...</string>
@@ -734,17 +734,30 @@
               <item row="0" column="1">
                <widget class="QComboBox" name="annotationName_comboBox"/>
               </item>
-              <item row="4" column="0">
-               <widget class="QLabel" name="annotationCategoryAlignWeight_label">
+              <item row="5" column="0">
+               <widget class="QLabel" name="annotationAlignWeight_label">
                 <property name="text">
                  <string>Align Weight:</string>
                 </property>
                </widget>
               </item>
-              <item row="4" column="1">
-               <widget class="QLineEdit" name="annotationCategoryAlignWeight_lineEdit">
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="annotationAlignWeight_lineEdit">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The weighting given to all annotations in this category when optimizing alignment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;Weight applied to this annotation/category when optimizing alignment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1">
+               <widget class="QCheckBox" name="annotiationSetByCategory_checkBox">
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked, the values entered in the following are set for all annotations in the current category.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="text">
+                 <string>Set by category:</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
                 </property>
                </widget>
               </item>

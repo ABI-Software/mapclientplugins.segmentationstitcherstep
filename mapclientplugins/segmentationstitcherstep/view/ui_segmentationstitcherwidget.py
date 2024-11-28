@@ -444,15 +444,21 @@ class Ui_SegmentationStitcherWidget(object):
 
         self.formLayout_2.setWidget(0, QFormLayout.FieldRole, self.annotationName_comboBox)
 
-        self.annotationCategoryAlignWeight_label = QLabel(self.annotations_group_frame)
-        self.annotationCategoryAlignWeight_label.setObjectName(u"annotationCategoryAlignWeight_label")
+        self.annotationAlignWeight_label = QLabel(self.annotations_group_frame)
+        self.annotationAlignWeight_label.setObjectName(u"annotationAlignWeight_label")
 
-        self.formLayout_2.setWidget(4, QFormLayout.LabelRole, self.annotationCategoryAlignWeight_label)
+        self.formLayout_2.setWidget(5, QFormLayout.LabelRole, self.annotationAlignWeight_label)
 
-        self.annotationCategoryAlignWeight_lineEdit = QLineEdit(self.annotations_group_frame)
-        self.annotationCategoryAlignWeight_lineEdit.setObjectName(u"annotationCategoryAlignWeight_lineEdit")
+        self.annotationAlignWeight_lineEdit = QLineEdit(self.annotations_group_frame)
+        self.annotationAlignWeight_lineEdit.setObjectName(u"annotationAlignWeight_lineEdit")
 
-        self.formLayout_2.setWidget(4, QFormLayout.FieldRole, self.annotationCategoryAlignWeight_lineEdit)
+        self.formLayout_2.setWidget(5, QFormLayout.FieldRole, self.annotationAlignWeight_lineEdit)
+
+        self.annotiationSetByCategory_checkBox = QCheckBox(self.annotations_group_frame)
+        self.annotiationSetByCategory_checkBox.setObjectName(u"annotiationSetByCategory_checkBox")
+        self.annotiationSetByCategory_checkBox.setChecked(True)
+
+        self.formLayout_2.setWidget(4, QFormLayout.FieldRole, self.annotiationSetByCategory_checkBox)
 
 
         self.verticalLayout_12.addWidget(self.annotations_group_frame)
@@ -529,7 +535,7 @@ class Ui_SegmentationStitcherWidget(object):
         self.conntectionsNew_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"New...", None))
         self.connectionsDelete_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Delete...", None))
 #if QT_CONFIG(tooltip)
-        self.connectionsOptimizeAlignment_pushButton.setToolTip(QCoreApplication.translate("SegmentationStitcherWidget", u"<html><head/><body><p>Optimize the transformation of the second segment in the selected connection to align it with ends points of the first segment.</p></body></html>", None))
+        self.connectionsOptimizeAlignment_pushButton.setToolTip(QCoreApplication.translate("SegmentationStitcherWidget", u"<html><head/><body><p>Optimize  transformation of the second segment in the selected connection to align its network end points with those of the first segment.</p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
         self.connectionsOptimizeAlignment_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Optimize Alignment...", None))
         self.displayMarkerNames_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Marker names", None))
@@ -559,10 +565,14 @@ class Ui_SegmentationStitcherWidget(object):
         self.annotationTerm_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Term:", None))
         self.annotationDimension_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Dimension:", None))
         self.annotationCategory_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Category:", None))
-        self.annotationCategoryAlignWeight_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Align Weight:", None))
+        self.annotationAlignWeight_label.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Align Weight:", None))
 #if QT_CONFIG(tooltip)
-        self.annotationCategoryAlignWeight_lineEdit.setToolTip(QCoreApplication.translate("SegmentationStitcherWidget", u"<html><head/><body><p>The weighting given to all annotations in this category when optimizing alignment.</p></body></html>", None))
+        self.annotationAlignWeight_lineEdit.setToolTip(QCoreApplication.translate("SegmentationStitcherWidget", u"<html><head/><body><p><br/>Weight applied to this annotation/category when optimizing alignment.</p></body></html>", None))
 #endif // QT_CONFIG(tooltip)
+#if QT_CONFIG(tooltip)
+        self.annotiationSetByCategory_checkBox.setToolTip(QCoreApplication.translate("SegmentationStitcherWidget", u"<html><head/><body><p>If checked, the values entered in the following are set for all annotations in the current category.</p></body></html>", None))
+#endif // QT_CONFIG(tooltip)
+        self.annotiationSetByCategory_checkBox.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Set by category:", None))
         self.controls_tabWidget.setTabText(self.controls_tabWidget.indexOf(self.annotations_tab), QCoreApplication.translate("SegmentationStitcherWidget", u"Annotations", None))
         self.documentation_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"Online Documentation", None))
         self.viewAll_pushButton.setText(QCoreApplication.translate("SegmentationStitcherWidget", u"View All", None))

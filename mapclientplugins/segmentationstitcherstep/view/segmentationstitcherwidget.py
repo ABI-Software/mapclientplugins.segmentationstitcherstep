@@ -133,6 +133,7 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
 
         self._ui.annotationName_comboBox.currentIndexChanged.connect(self._annotationName_changed)
         self._ui.annotationCategory_comboBox.currentIndexChanged.connect(self._annotationCategory_changed)
+        self._ui.annotationAlignWeight_lineEdit.editingFinished.connect(self._annotationAlignWeight_entered)
 
     def _refresh_options(self):
         self._ui.identifier_label.setText('Identifier:  ' + self._model.get_step_identifier())
@@ -233,6 +234,9 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
                     self._ui.annotationCategory_comboBox.setCurrentIndex(index)
                 index += 1
         self._ui.annotationCategory_comboBox.setEnabled(enabled)
+        realFormat = "{:.4g}"
+        self._ui.annotationAlignWeight_lineEdit.setText(
+            realFormat.format(current_annotation.get_align_weight()) if current_annotation else "")
 
     def _annotationName_changed(self, index):
         annotation_name = self._ui.annotationName_comboBox.itemText(index)
@@ -243,8 +247,16 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         annotation_category_name = self._ui.annotationCategory_comboBox.itemText(index)
         self._model.set_current_annotation_category_by_name(annotation_category_name)
 
+    def _annotationAlignWeight_entered(self):
+        align_weight = QLineEdit_parseRealNonNegative(self._ui.annotationAlignWeight_lineEdit)
+        if align_weight >= 0.0:
+            set_by_category = self._ui.annotiationSetByCategory_checkBox.isChecked()
+            self._model.set_current_annotation_align_weight(align_weight, set_by_category)
+        self._refresh_current_annotation_settings()
+
+
     def get_model(self):
-            return self._model
+        return self._model
 
     def _documentation_buttonClicked(self):
         webbrowser.open("https://abi-mapping-tools.readthedocs.io/en/latest/mapclientplugins.segmentationstitcherstep/docs/index.html")
