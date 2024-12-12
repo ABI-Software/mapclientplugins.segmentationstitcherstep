@@ -8,7 +8,9 @@ import json
 from cmlibs.maths.vectorops import add, axis_angle_to_rotation_matrix, euler_to_rotation_matrix, matrix_mult, \
     rotation_matrix_to_euler
 from cmlibs.utils.zinc.finiteelement import evaluate_field_nodeset_range
-from cmlibs.utils.zinc.general import ChangeManager
+from cmlibs.utils.zinc.general import ChangeManager, HierarchicalChangeManager
+from cmlibs.utils.zinc.group import group_add_group_local_contents
+from cmlibs.utils.zinc.scene import scene_clear_selection_group, scene_get_or_create_selection_group
 from cmlibs.zinc.field import Field
 from cmlibs.zinc.glyph import Glyph
 from cmlibs.zinc.graphics import Graphicslineattributes
@@ -164,6 +166,26 @@ class SegmentationStitcherModel(object):
         :param annotation: Stitcher Annotation object or None.
         """
         self._current_annotation = annotation
+        root_region = self.get_root_region()
+        root_scene = root_region.getScene()
+        with HierarchicalChangeManager(root_region), ChangeManager(root_scene):
+            if not annotation:
+                scene_clear_selection_group(root_scene)
+            else:
+                selection_group = scene_get_or_create_selection_group(root_scene)
+                selection_group.clear()
+                name = annotation.get_name()
+                regions = []
+                for segment in self._stitcher.get_segments():
+                    regions.append(segment.get_raw_region())
+                for connection in self._stitcher.get_connections():
+                    regions.append(connection.get_region())
+                for region in regions:
+                    fieldmodule = region.getFieldmodule()
+                    group = fieldmodule.findFieldByName(name).castGroup()
+                    if group.isValid():
+                        subregion_selection_group = selection_group.getOrCreateSubregionFieldGroup(region)
+                        group_add_group_local_contents(subregion_selection_group, group)
 
     def set_current_annotation_by_name(self, annotation_name):
         for annotation in self._stitcher.get_annotations():
