@@ -161,20 +161,19 @@ class SegmentationStitcherModel(object):
     def get_current_annotation(self):
         return self._current_annotation
 
-    def set_current_annotation(self, annotation):
+    def _select_current_annotation(self):
         """
-        :param annotation: Stitcher Annotation object or None.
+        Update the current scene selection to match and highlight the current annotation.
         """
-        self._current_annotation = annotation
         root_region = self.get_root_region()
         root_scene = root_region.getScene()
         with HierarchicalChangeManager(root_region), ChangeManager(root_scene):
-            if not annotation:
+            if not self._current_annotation:
                 scene_clear_selection_group(root_scene)
             else:
                 selection_group = scene_get_or_create_selection_group(root_scene)
                 selection_group.clear()
-                name = annotation.get_name()
+                name = self._current_annotation.get_name()
                 regions = []
                 for segment in self._stitcher.get_segments():
                     regions.append(segment.get_raw_region())
@@ -187,6 +186,13 @@ class SegmentationStitcherModel(object):
                         subregion_selection_group = selection_group.getOrCreateSubregionFieldGroup(region)
                         group_add_group_local_contents(subregion_selection_group, group)
 
+    def set_current_annotation(self, annotation):
+        """
+        :param annotation: Stitcher Annotation object or None.
+        """
+        self._current_annotation = annotation
+        self._select_current_annotation()
+
     def set_current_annotation_by_name(self, annotation_name):
         for annotation in self._stitcher.get_annotations():
             if annotation.get_name() == annotation_name:
@@ -198,6 +204,7 @@ class SegmentationStitcherModel(object):
     def set_current_annotation_category_by_name(self, annotation_category_name):
         if self._current_annotation:
             self._current_annotation.set_category_by_name(annotation_category_name)
+            self._select_current_annotation()
 
     def set_current_annotation_align_weight(self, align_weight, set_by_category):
         """
