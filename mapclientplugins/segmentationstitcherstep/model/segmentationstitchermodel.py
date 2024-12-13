@@ -77,7 +77,7 @@ class SegmentationStitcherModel(object):
         connections = self._stitcher.get_connections()
         self._current_connection = connections[0] if connections else None
         self._current_annotation = None
-        self._segmentDataChangeCallback = None
+        self._segment_data_change_callback = None
 
     def _init_graphics_modules(self):
         context = self._stitcher.get_context()
@@ -221,12 +221,12 @@ class SegmentationStitcherModel(object):
             else:
                 self._current_annotation.set_align_weight(align_weight)
 
-    def setSegmentDataChangeCallback(self, segmentDataChangeCallback):
-        self._segmentDataChangeCallback = segmentDataChangeCallback
+    def set_segment_data_change_callback(self, segment_data_change_callback):
+        self._segment_data_change_callback = segment_data_change_callback
 
-    def _segmentDataChanged(self, segment):
-        if self._segmentDataChangeCallback:
-            self._segmentDataChangeCallback(segment)
+    def _segment_data_changed(self, segment):
+        if self._segment_data_change_callback:
+            self._segment_data_change_callback(segment)
 
     def create_connection(self, segments):
         connection = self._stitcher.create_connection(segments)
@@ -245,7 +245,7 @@ class SegmentationStitcherModel(object):
         connection.optimise_transformation()
         segment = connection.get_segments()[1]
         self._set_segment_scene_transformation(segment)
-        self._segmentDataChanged(segment)
+        self._segment_data_changed(segment)
 
     def get_current_connection(self):
         """
@@ -289,7 +289,7 @@ class SegmentationStitcherModel(object):
         """
         segment.set_rotation(rotation)
         self._set_segment_scene_transformation(segment)
-        self._segmentDataChanged(segment)
+        self._segment_data_changed(segment)
 
     def set_segment_translation(self, segment, translation):
         """
@@ -298,7 +298,7 @@ class SegmentationStitcherModel(object):
         """
         segment.set_translation(translation)
         self._set_segment_scene_transformation(segment)
-        self._segmentDataChanged(segment)
+        self._segment_data_changed(segment)
 
     def _get_visibility(self, graphics_name):
         return self._display_settings[graphics_name]

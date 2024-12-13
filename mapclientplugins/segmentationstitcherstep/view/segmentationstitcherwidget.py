@@ -69,9 +69,9 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         self._build_connections_list()
         self._make_connections()
         self._refresh_options()
-        self._model.setSegmentDataChangeCallback(self._segmentDataChanged)
+        self._model.set_segment_data_change_callback(self._segment_data_changed)
 
-    def _segmentDataChanged(self, segment):
+    def _segment_data_changed(self, segment):
         if segment == self._model.get_current_segment():
             self._refresh_segment_data()
 
