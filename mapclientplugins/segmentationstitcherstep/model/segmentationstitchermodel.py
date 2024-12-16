@@ -677,6 +677,7 @@ class SegmentationStitcherModel(object):
 
                 working_region = segment.get_working_region()
                 working_scene = working_region.getScene()
+                working_end_group = segment.get_working_end_group()
                 end_point_coordinates, end_point_radius_direction, end_point_best_fit_line_orientation = (
                     segment.get_end_point_fields())
                 show_radius = self.is_display_end_point_radius()
@@ -690,6 +691,7 @@ class SegmentationStitcherModel(object):
 
                     end_point_directions = working_scene.createGraphicsPoints()
                     end_point_directions.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+                    end_point_directions.setSubgroupField(working_end_group)
                     end_point_directions.setCoordinateField(end_point_coordinates)
                     point_attr = end_point_directions.getGraphicspointattributes()
                     point_attr.setBaseSize([0.0, 0.0, 0.0])
@@ -702,6 +704,7 @@ class SegmentationStitcherModel(object):
 
                     end_point_best_fit_lines = working_scene.createGraphicsPoints()
                     end_point_best_fit_lines.setFieldDomainType(Field.DOMAIN_TYPE_DATAPOINTS)
+                    end_point_best_fit_lines.setSubgroupField(working_end_group)
                     end_point_best_fit_lines.setCoordinateField(end_point_coordinates)
                     point_attr = end_point_best_fit_lines.getGraphicspointattributes()
                     point_attr.setBaseSize([0.0, 0.0, 0.0])
