@@ -1,56 +1,17 @@
 """
 Dialog/UI for interacting with SegmentationStitcherModel.
 """
-"""
-Segmentation stitcher user interface.
-"""
 import webbrowser
 
 from PySide6 import QtCore, QtWidgets
 
 from cmlibs.maths.vectorops import dot, magnitude, mult, normalize, sub
+from cmlibs.widgets.utils import parse_real_non_negative, parse_vector
+
 from mapclientplugins.segmentationstitcherstep.view.newconnectiondialog import NewConnectionDialog
 from mapclientplugins.segmentationstitcherstep.view.ui_segmentationstitcherwidget import Ui_SegmentationStitcherWidget
 from segmentationstitcher.annotation import AnnotationCategory
 
-
-def QLineEdit_parseInt(lineedit):
-    """
-    Return integer from line edit text, or None if invalid.
-    """
-    try:
-        text = lineedit.text()
-        return int(text)
-    except ValueError:
-        pass
-    return None
-
-
-def QLineEdit_parseRealNonNegative(lineedit):
-    """
-    Return non-negative real value from line edit text, or negative if failed.
-    """
-    try:
-        value = float(lineedit.text())
-        if value >= 0.0:
-            return value
-    except:
-        pass
-    return -1.0
-
-
-def QLineEdit_parseVector(lineedit):
-    """
-    Return one or more component real vector as list from comma separated text in QLineEdit widget
-    or None if invalid.
-    """
-    try:
-        text = lineedit.text()
-        values = [float(value) for value in text.split(",")]
-        return values
-    except ValueError:
-        pass
-    return None
 
 class SegmentationStitcherWidget(QtWidgets.QWidget):
 
@@ -248,7 +209,7 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         self._model.set_current_annotation_category_by_name(annotation_category_name)
 
     def _annotationAlignWeight_entered(self):
-        align_weight = QLineEdit_parseRealNonNegative(self._ui.annotationAlignWeight_lineEdit)
+        align_weight = parse_real_non_negative(self._ui.annotationAlignWeight_lineEdit)
         if align_weight >= 0.0:
             set_by_category = self._ui.annotiationSetByCategory_checkBox.isChecked()
             self._model.set_current_annotation_align_weight(align_weight, set_by_category)
@@ -350,7 +311,7 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
 
     def _segmentRotation_lineEditChanged(self):
         segment = self._model.get_current_segment()
-        rotation = QLineEdit_parseVector(self._ui.segmentRotation_lineEdit)
+        rotation = parse_vector(self._ui.segmentRotation_lineEdit)
         if rotation:
             while len(rotation) < 3:
                 rotation.append(0.0)
@@ -362,7 +323,7 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
 
     def _segmentTranslation_lineEditChanged(self):
         segment = self._model.get_current_segment()
-        translation = QLineEdit_parseVector(self._ui.segmentTranslation_lineEdit)
+        translation = parse_vector(self._ui.segmentTranslation_lineEdit)
         if translation:
             while len(translation) < 3:
                 translation.append(0.0)
@@ -505,7 +466,7 @@ class SegmentationStitcherWidget(QtWidgets.QWidget):
         self._ui.displayRadiusScale_lineEdit.setText(radius_scale_str)
 
     def _displayRadiusScale_entered(self):
-        radius_scale = QLineEdit_parseRealNonNegative(self._ui.displayRadiusScale_lineEdit)
+        radius_scale = parse_real_non_negative(self._ui.displayRadiusScale_lineEdit)
         if radius_scale >= 0.0:
             self._model.set_radius_scale(radius_scale)
         self._refresh_radius_scale()

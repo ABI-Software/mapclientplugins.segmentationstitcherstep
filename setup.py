@@ -37,7 +37,7 @@ requires = [
     "cmlibs.maths >= 0.6.2",
     "cmlibs.utils >= 0.9.0",
     "cmlibs.zinc >= 4.1",
-    "cmlibs.widgets >= 0.6.2",
+    "cmlibs.widgets >= 0.7",
     "PySide6"
 ]
 
